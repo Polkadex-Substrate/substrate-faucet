@@ -1,42 +1,68 @@
 {
-  "Address": "AccountId",
-  "TokenBalance": "u128",
-  "TokenId": "u128",
-  "Public": "AccountId",
-  "Signature": "MultiSignature",
-  "Offer": {
-    "offer_token": "TokenId",
-    "offer_amount": "TokenBalance",
-    "requested_token": "TokenId",
-    "requested_amount": "TokenBalance",
-    "nonce": "u128"
+  "OrderType": {
+    "_enum": [
+      "BidLimit",
+      "BidMarket",
+      "AskLimit",
+      "AskMarket"
+    ]
   },
-  "SignedOffer": {
-    "offer": "Offer",
-    "signature": "MultiSignature",
-    "signer": "AccountId"
+  "Order": {
+    "id": "Hash",
+    "trading_pair": "Hash",
+    "trader": "AccountId",
+    "price": "FixedU128",
+    "quantity": "FixedU128",
+    "order_type": "OrderType"
   },
-  "TransferDetails": {
-    "amount": "Balance",
-    "to": "AccountId"
+  "Order4RPC": {
+    "id": "[u8;32]",
+    "trading_pair": "[u8;32]",
+    "trader": "[u8;32]",
+    "price": "Vec<u8>",
+    "quantity": "Vec<u8>",
+    "order_type": "OrderType"
   },
-  "TokenTransferDetails": {
-    "amount": "TokenBalance",
-    "to": "AccountId"
+  "MarketData": {
+    "low": "FixedU128",
+    "high": "FixedU128",
+    "volume": "FixedU128",
+    "open": "FixedU128",
+    "close": "FixedU128"
+
   },
-  "TransferStatus": {
-    "amount": "TokenBalance",
-    "to": "AccountId",
-    "status": "bool"
+  "LinkedPriceLevel": {
+    "next": "Option<FixedU128>",
+    "prev": "Option<FixedU128>",
+    "orders": "Vec<Order>"
   },
-  "DelegatedTransferDetails": {
-    "amount": "Balance",
-    "to": "AccountId",
-    "nonce": "u128"
+  "LinkedPriceLevelRpc": {
+    "next": "Vec<u8>",
+    "prev": "Vec<u8>",
+    "orders": "Vec<Order4RPC>"
   },
-  "SignedDelegatedTransferDetails": {
-    "transfer": "DelegatedTransferDetails",
-    "signature": "MultiSignature",
-    "signer": "AccountId"
-  }
+  "Orderbook": {
+    "trading_pair": "Hash",
+    "base_asset_id": "u32",
+    "quote_asset_id": "u32",
+    "best_bid_price": "FixedU128",
+    "best_ask_price": "FixedU128"
+  },
+  "OrderbookRPC": {
+    "trading_pair": "[u8;32]",
+    "base_asset_id": "u32",
+    "quote_asset_id": "u32",
+    "best_bid_price": "Vec<u8>",
+    "best_ask_price": "Vec<u8>"
+  },
+  "OrderbookUpdates": {
+    "bids": "Vec<FrontendPricelevel>",
+    "asks": "Vec<FrontendPricelevel>"
+  },
+  "FrontendPricelevel": {
+    "price": "FixedU128",
+    "quantity": "FixedU128"
+  },
+  "LookupSource": "AccountId",
+  "Address": "AccountId"
 }

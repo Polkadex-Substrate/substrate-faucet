@@ -22,6 +22,10 @@ const { BN } = require("bn.js");
 const fs = require("fs");
 // this is .json additional types file
 const ADDITIONAL_TYPES = require("./types/types.json");
+const UNIT = new BN(1000000000000, 10);
+const PolkadexFaucet = "spoil sponsor actor crash trap peace inject produce armed maid relax initial";
+const USDFaucet = "donor endless angry below gate magic thrive orange apology fold defense outer";
+const BTCFaucet = "movie buzz address salon soul sand advice slow install subject vicious total";
 
 // this is the Generic Faucet Interface
 class GenericFaucetInterface {
@@ -46,13 +50,31 @@ class GenericFaucetInterface {
     this.timeLimitMessage = `Sorry please wait for ${this.timeLimitHours} hours, between token requests from the same telegram account!`;
     this.invalidAddressMessage = `Invalid address! Plese use the generic substrate format with address type ${this.addressType}!`;
     // record storage (for time limit)
-    this.records = {};
+    this.polkadexrecords = {};
+    this.btcrecords = {};
+    this.usdrecords = {};
   }
 
   // tries to get valid address from message, if fails, returns undefined
   getAddressFromMessage(message) {
-    const address = message.text.substring(9);
+    const address = message.text.substring(12);
     const check = UtilCrypto.checkAddress(address, this.addressType);
+    console.log("Address Check: ",check[0], " Reason: ",check[1])
+    if (check[0]) {
+      // Address match
+      return address;
+    } else {
+      // Not a valid address
+      return undefined;
+    }
+  }
+
+  // tries to get valid address from message, if fails, returns undefined
+  // /requestpolkadex
+  getAddressFromPolkadexMessage(message) {
+    const address = message.text.substring(17);
+    const check = UtilCrypto.checkAddress(address, this.addressType);
+    console.log("Address Check: ",check[0], " Reason: ",check[1])
     if (check[0]) {
       // Address match
       return address;
@@ -68,10 +90,22 @@ class GenericFaucetInterface {
   }
 
   // loads json file and inits keyring
-  initKeyring() {
+  initPolkadexKeyring() {
     const keyring = new Keyring({ type: "sr25519" });
     // // TODO: better error handling
-    this.keyRing = keyring.addFromMnemonic(this.mnemonic);
+    this.keyRing = keyring.addFromMnemonic(PolkadexFaucet);
+  }
+  // loads json file and inits keyring
+  initBTCKeyring() {
+    const keyring = new Keyring({ type: "sr25519" });
+    // // TODO: better error handling
+    this.keyRing = keyring.addFromMnemonic(BTCFaucet);
+  }
+  // loads json file and inits keyring
+  initUSDKeyring() {
+    const keyring = new Keyring({ type: "sr25519" });
+    // // TODO: better error handling
+    this.keyRing = keyring.addFromMnemonic(USDFaucet);
   }
   // This initializes api
   async initApi() {
@@ -89,27 +123,56 @@ class GenericFaucetInterface {
       `You are connected to chain ${chain} using ${nodeName} v${nodeVersion}`
     );
   }
-  async sendToken(address) {
+  async sendPolkadexToken(address) {
     const api = await this.initApi();
-    this.initKeyring();
-    const parsedAmount = this.decimals.mul(new BN(this.amount));
+    this.initPolkadexKeyring();
+    let PolkadexReward =  new BN((10*UNIT).toString(), 10);
+
     console.log(`Sending ${this.amount} ${this.tokenName} to ${address}`);
-    const transfer = this.api.tx.balances.transfer(address, parsedAmount);
-    const hash = await transfer.signAndSend(this.keyRing);
-    console.log("Transfer sent with hash", hash.toHex());
+
+    // Polkadex Transfer
+    const nativetransfer = this.api.tx.genericAsset.transfer(0,address, PolkadexReward);
+    const nativehash = await nativetransfer.signAndSend(this.keyRing);
+    console.log("Polkadex Transfer sent with hash", nativehash.toHex());
   }
+
+  async sendUSDToken(address) {
+    const api = await this.initApi();
+    this.initUSDKeyring();
+    let USDReward = new BN((10000*UNIT).toString(), 10);
+
+    console.log(`Sending ${this.amount} ${this.tokenName} to ${address}`);
+
+    // USD Transfer
+    const usdtransfer = this.api.tx.genericAsset.transfer(1,address, USDReward);
+    const usdhash = await usdtransfer.signAndSend(this.keyRing);
+    console.log("Polkadex Transfer sent with hash", usdhash.toHex());
+  }
+
+  async sendBTCToken(address) {
+    const api = await this.initApi();
+    this.initBTCKeyring();
+    let BTCReward = new BN((1*UNIT).toString(), 10);
+
+    console.log(`Sending ${this.amount} ${this.tokenName} to ${address}`);
+    // BTC Transfer
+    const btctransfer = this.api.tx.genericAsset.transfer(2,address, BTCReward);
+    const btchash = await btctransfer.signAndSend(this.keyRing);
+    console.log("Polkadex Transfer sent with hash", btchash.toHex());
+  }
+
   // function that telgram bot calls
-  async requestToken(message) {
+  async requestPolkadexToken(message) {
     let response;
     const now = Date.now();
     //   const username = message["from"]["username"];
     const senderId = message["from"]["id"];
     // Get the senders record
-    const senderRecords = this.records[senderId];
+    const senderRecords = this.polkadexrecords[senderId];
 
-    const address = this.getAddressFromMessage(message);
+    const address = this.getAddressFromPolkadexMessage(message);
     if (address) {
-      response = `Sending ${this.amount} ${this.tokenName} to ${address}!`;
+      response = `Sending 10 Polkadex to ${address}!`;
       // if exists
       if (senderRecords) {
         // make sure last request was long time ago
@@ -117,9 +180,9 @@ class GenericFaucetInterface {
         // check if now - last > timeLimitHours * 60 * 60 * 1000
         if (now - last > this.timeLimitHours * 1000 * 60 * 60) {
           // yes limit has passed
-          await this.sendToken(address);
+          await this.sendPolkadexToken(address);
           // update the records to show this
-          this.records[senderId].push(now);
+          this.polkadexrecords[senderId].push(now);
         } else {
           // this means user requested tokens already
           response = this.timeLimitMessage;
@@ -127,11 +190,93 @@ class GenericFaucetInterface {
       } else {
         // this is users first request
         // yes limit has passed
-        await this.sendToken(address);
+        await this.sendPolkadexToken(address);
         // create the record
-        this.records[senderId] = [];
+        this.polkadexrecords[senderId] = [];
         // update the records to show this
-        this.records[senderId].push(now);
+        this.polkadexrecords[senderId].push(now);
+      }
+    } else {
+      response = this.invalidAddressMessage;
+    }
+    return response;
+  }
+
+  // function that telgram bot calls
+  async requestBTCToken(message) {
+    let response;
+    const now = Date.now();
+    //   const username = message["from"]["username"];
+    const senderId = message["from"]["id"];
+    // Get the senders record
+    const senderRecords = this.btcrecords[senderId];
+
+    const address = this.getAddressFromMessage(message);
+    if (address) {
+      response = `Sending 1 PBTC to ${address}!`;
+      // if exists
+      if (senderRecords) {
+        // make sure last request was long time ago
+        const last = senderRecords.slice(-1)[0];
+        // check if now - last > timeLimitHours * 60 * 60 * 1000
+        if (now - last > this.timeLimitHours * 1000 * 60 * 60) {
+          // yes limit has passed
+          await this.sendBTCToken(address);
+          // update the records to show this
+          this.btcrecords[senderId].push(now);
+        } else {
+          // this means user requested tokens already
+          response = this.timeLimitMessage;
+        }
+      } else {
+        // this is users first request
+        // yes limit has passed
+        await this.sendBTCToken(address);
+        // create the record
+        this.btcrecords[senderId] = [];
+        // update the records to show this
+        this.btcrecords[senderId].push(now);
+      }
+    } else {
+      response = this.invalidAddressMessage;
+    }
+    return response;
+  }
+
+  // function that telgram bot calls
+  async requestUSDToken(message) {
+    let response;
+    const now = Date.now();
+    //   const username = message["from"]["username"];
+    const senderId = message["from"]["id"];
+    // Get the senders record
+    const senderRecords = this.usdrecords[senderId];
+
+    const address = this.getAddressFromMessage(message);
+    if (address) {
+      response = `Sending 10000 PUSD to ${address}!`;
+      // if exists
+      if (senderRecords) {
+        // make sure last request was long time ago
+        const last = senderRecords.slice(-1)[0];
+        // check if now - last > timeLimitHours * 60 * 60 * 1000
+        if (now - last > this.timeLimitHours * 1000 * 60 * 60) {
+          // yes limit has passed
+          await this.sendUSDToken(address);
+          // update the records to show this
+          this.usdrecords[senderId].push(now);
+        } else {
+          // this means user requested tokens already
+          response = this.timeLimitMessage;
+        }
+      } else {
+        // this is users first request
+        // yes limit has passed
+        await this.sendUSDToken(address);
+        // create the record
+        this.usdrecords[senderId] = [];
+        // update the records to show this
+        this.usdrecords[senderId].push(now);
       }
     } else {
       response = this.invalidAddressMessage;
@@ -139,6 +284,7 @@ class GenericFaucetInterface {
     return response;
   }
 }
+
 
 // load env vars
 require("dotenv").config();
@@ -171,10 +317,21 @@ bot.help(async (ctx) => {
 });
 
 // On request token command
-bot.command("request", async (ctx) => {
-  const resp = await faucet.requestToken(ctx.message);
+bot.command("requestbtc", async (ctx) => {
+  const resp = await faucet.requestBTCToken(ctx.message);
   await ctx.reply(resp);
 });
 
+// On request token command
+bot.command("requestpolkadex", async (ctx) => {
+  const resp = await faucet.requestPolkadexToken(ctx.message);
+  await ctx.reply(resp);
+});
+
+// On request token command
+bot.command("requestusd", async (ctx) => {
+  const resp = await faucet.requestUSDToken(ctx.message);
+  await ctx.reply(resp);
+});
 // Run the bot
 bot.launch();
