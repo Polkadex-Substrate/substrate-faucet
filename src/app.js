@@ -48,7 +48,7 @@ class GenericFaucetInterface {
     with your correct ${this.tokenName} address`;
     // Error Messages
     this.timeLimitMessage = `Sorry please wait for ${this.timeLimitHours} hours, between token requests from the same telegram account!`;
-    this.invalidAddressMessage = `Invalid address! Plese use the generic substrate format with address type ${this.addressType}!`;
+    this.invalidAddressMessage = `Invalid address! Plese use the generic substrate format with address type ${this.addressType}`;
     // record storage (for time limit)
     this.polkadexrecords = {};
     this.btcrecords = {};
@@ -172,7 +172,7 @@ class GenericFaucetInterface {
 
     const address = this.getAddressFromPolkadexMessage(message);
     if (address) {
-      response = `Sending 10 Polkadex to ${address}!`;
+      response = `Sending 10 Polkadex to ${address}`;
       // if exists
       if (senderRecords) {
         // make sure last request was long time ago
@@ -213,7 +213,7 @@ class GenericFaucetInterface {
 
     const address = this.getAddressFromMessage(message);
     if (address) {
-      response = `Sending 1 PBTC to ${address}!`;
+      response = `Sending 1 PBTC to ${address}`;
       // if exists
       if (senderRecords) {
         // make sure last request was long time ago
@@ -254,7 +254,7 @@ class GenericFaucetInterface {
 
     const address = this.getAddressFromMessage(message);
     if (address) {
-      response = `Sending 10000 PUSD to ${address}!`;
+      response = `Sending 10000 PUSD to ${address}`;
       // if exists
       if (senderRecords) {
         // make sure last request was long time ago
@@ -329,7 +329,7 @@ bot.command("requestpolkadex", async (ctx) => {
 });
 
 // On request token command
-bot.command("requestusd", async (ctx) => {
+bot.command("requestusdt", async (ctx) => {
   const resp = await faucet.requestUSDToken(ctx.message);
   await ctx.reply(resp);
 });
