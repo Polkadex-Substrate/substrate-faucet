@@ -68,6 +68,19 @@ class GenericFaucetInterface {
       return undefined;
     }
   }
+  // tries to get valid address from message, if fails, returns undefined
+  getAddressFromUSDTMessage(message) {
+    const address = message.text.substring(13);
+    const check = UtilCrypto.checkAddress(address, this.addressType);
+    console.log("Address Check: ",check[0], " Reason: ",check[1])
+    if (check[0]) {
+      // Address match
+      return address;
+    } else {
+      // Not a valid address
+      return undefined;
+    }
+  }
 
   // tries to get valid address from message, if fails, returns undefined
   // /requestpolkadex
@@ -252,7 +265,7 @@ class GenericFaucetInterface {
     // Get the senders record
     const senderRecords = this.usdrecords[senderId];
 
-    const address = this.getAddressFromMessage(message);
+    const address = this.getAddressFromUSDTMessage(message);
     if (address) {
       response = `Sending 10000 PUSD to ${address}`;
       // if exists
